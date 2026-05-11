@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نجدة - تطبيق الطوارئ</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #e8001c;
+    --red-bright: #ff1a35;
+    --red-dark: #a0001a;
+    --red-glow: rgba(232,0,28,0.4);
+    --red-soft: rgba(232,0,28,0.12);
+    --bg: #080a0d;
+    --bg2: #0d1017;
+    --bg3: #131820;
+    --surface: #171e28;
+    --surface2: #1d2535;
+    --surface3: #232e40;
+    --border: rgba(255,255,255,0.07);
+    --border-red: rgba(232,0,28,0.3);
+    --text: #f0f4ff;
+    --text2: #8fa0ba;
+    --text3: #56677e;
+    --green: #00e676;
+    --green-soft: rgba(0,230,118,0.15);
+    --yellow: #ffd740;
+    --font: 'Cairo', 'Tajawal', sans-serif;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow-red: 0 0 40px rgba(232,0,28,0.3), 0 0 80px rgba(232,0,28,0.15);
+    --shadow-card: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow: hidden;
+    direction: rtl;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -30%;
+    right: -20%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(circle, rgba(232,0,28,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -20%;
+    left: -10%;
+    width: 50%;
+    height: 50%;
+    background: radial-gradient(circle, rgba(232,0,28,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    max-width: 430px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(180deg, #0a0d14 0%, #080a0d 100%);
+    overflow: hidden;
+  }
+
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px 8px;
+    font-size: 12px;
+    color: var(--text3);
+    font-weight: 600;
+  }
+  .status-bar .time { font-size: 15px; color: var(--text2); font-weight: 700; }
+  .status-icons { display: flex; gap: 6px; align-items: center; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse-green 2s infinite; }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 20px 16px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--red), var(--red-dark));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 16px rgba(232,0,28,0.4);
+  }
+  .logo-text { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
+  .logo-text span { color: var(--red); }
+  .header-badge {
+    background: var(--green-soft);
+    border: 1px solid rgba(0,230,118,0.3);
+    color: var(--green);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  .screen { display: none; flex: 1; overflow-y: auto; padding-bottom: 100px; }
+  .screen.active { display: flex; flex-direction: column; }
+  .screen::-webkit-scrollbar { display: none; }
+
+  .home-content { padding: 0 20px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+
+  .sos-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 0 20px;
+    position: relative;
+  }
+
+  .sos-rings {
+    position: absolute;
+    width: 220px; height: 220px;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .sos-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid var(--red);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    animation: sos-pulse 2.4s ease-out infinite;
+  }
+  .sos-ring:nth-child(1) { width: 170px; height: 170px; animation-delay: 0s; }
+  .sos-ring:nth-child(2) { width: 200px; height: 200px; animation-delay: 0.5s; border-color: rgba(232,0,28,0.6); }
+  .sos-ring:nth-child(3) { width: 230px; height: 230px; animation-delay: 1s; border-color: rgba(232,0,28,0.3); }
+
+  @keyframes sos-pulse {
+    0% { transform: translate(-50%,-50%) scale(0.8); opacity: 0.8; }
+    100% { transform: translate(-50%,-50%) scale(1.3); opacity: 0; }
+  }
+
+  .sos-btn {
+    width: 150px; height: 150px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ff3352, #e8001c 40%, #8b0012);
+    border: none;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative; z-index: 2;
+    box-shadow: 0 0 0 6px rgba(232,0,28,0.2), 0 0 40px rgba(232,0,28,0.5), 0 20px 60px rgba(232,0,28,0.3), inset 0 2px 8px rgba(255,100,100,0.3);
+    transition: transform 0.15s, box-shadow 0.15s;
+    animation: sos-breathe 3s ease-in-out infinite;
+  }
+  .sos-btn:active {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 3px rgba(232,0,28,0.3), 0 0 20px rgba(232,0,28,0.4), inset 0 2px 8px rgba(0,0,0,0.4);
+  }
+  @keyframes sos-breathe {
+    0%, 100% { box-shadow: 0 0 0 6px rgba(232,0,28,0.2), 0 0 40px rgba(232,0,28,0.5), 0 20px 60px rgba(232,0,28,0.3), inset 0 2px 8px rgba(255,100,100,0.3); }
+    50% { box-shadow: 0 0 0 10px rgba(232,0,28,0.15), 0 0 60px rgba(232,0,28,0.6), 0 20px 80px rgba(232,0,28,0.4), inset 0 2px 8px rgba(255,100,100,0.3); }
+  }
+  .sos-label { font-size: 42px; font-weight: 900; color: #fff; letter-spacing: 2px; line-height: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+  .sos-sublabel { font-size: 11px; color: rgba(255,255,255,0.75); font-weight: 600; margin-top: 2px; letter-spacing: 1px; }
+  .sos-hint { font-size: 12px; color: var(--text3); margin-top: 14px; font-weight: 500; }
+
+  .status-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+  }
+  .status-card::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 4px; height: 100%;
+    background: linear-gradient(180deg, var(--green), transparent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .status-indicator {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: var(--green-soft);
+    border: 1px solid rgba(0,230,118,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .status-info { flex: 1; }
+  .status-title { font-size: 15px; font-weight: 700; }
+  .status-desc { font-size: 12px; color: var(--text2); margin-top: 2px; font-weight: 500; }
+  .status-live {
+    font-size: 10px; font-weight: 700;
+    color: var(--green);
+    background: var(--green-soft);
+    padding: 3px 8px; border-radius: 20px;
+    border: 1px solid rgba(0,230,118,0.2);
+  }
+
+  .section-title {
+    font-size: 13px; font-weight: 700; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+  .quick-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .quick-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 8px;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: var(--shadow-card);
+    position: relative; overflow: hidden;
+  }
+  .quick-btn:hover { border-color: var(--border-red); transform: translateY(-2px); }
+  .quick-btn:active { transform: scale(0.97); }
+  .quick-btn .icon {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .quick-btn .icon.loc { background: rgba(0,120,255,0.15); }
+  .quick-btn .icon.rec { background: rgba(255,50,50,0.15); }
+  .quick-btn .icon.num { background: rgba(255,170,0,0.15); }
+  .quick-btn .label { font-size: 12px; font-weight: 700; color: var(--text2); }
+
+  .emergency-screen {
+    background: linear-gradient(180deg, #120008 0%, #0a000d 50%, var(--bg) 100%);
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .emergency-screen::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 50% 30%, rgba(232,0,28,0.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .emergency-header {
+    width: 100%;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 30px;
+  }
+  .emergency-icon {
+    width: 40px; height: 40px;
+    background: rgba(232,0,28,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    animation: flash-red 0.8s infinite;
+  }
+  @keyframes flash-red {
+    0%, 100% { background: rgba(232,0,28,0.3); }
+    50% { background: rgba(232,0,28,0.1); }
+  }
+  .emergency-title { font-size: 20px; font-weight: 900; color: var(--red-bright); }
+  .emergency-sub { font-size: 12px; color: var(--text2); font-weight: 500; }
+
+  .countdown-wrap {
+    position: relative;
+    width: 200px; height: 200px;
+    margin: 10px 0 24px;
+    flex-shrink: 0;
+  }
+  .countdown-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+  .countdown-track { fill: none; stroke: rgba(232,0,28,0.15); stroke-width: 6; }
+  .countdown-progress { fill: none; stroke: var(--red); stroke-width: 6; stroke-linecap: round;
+    stroke-dasharray: 565; stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear, stroke 0.5s;
+    filter: drop-shadow(0 0 6px var(--red));
+  }
+  .countdown-inner {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .countdown-num { font-size: 62px; font-weight: 900; color: var(--red-bright); line-height: 1; font-variant-numeric: tabular-nums; }
+  .countdown-label { font-size: 12px; color: var(--text2); font-weight: 600; margin-top: 2px; }
+
+  .emergency-info-card {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border-red);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .info-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-icon { font-size: 18px; flex-shrink: 0; }
+  .info-label { font-size: 11px; color: var(--text3); font-weight: 600; }
+  .info-value { font-size: 14px; color: var(--text); font-weight: 700; margin-top: 1px; }
+
+  .recipients-card {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+  .recipients-title { font-size: 12px; color: var(--text3); font-weight: 700; margin-bottom: 10px; }
+  .recipient-list { display: flex; flex-direction: column; gap: 8px; }
+  .recipient-item { display: flex; align-items: center; gap: 10px; }
+  .recipient-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--surface3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .recipient-name { font-size: 14px; font-weight: 700; }
+  .recipient-num { font-size: 12px; color: var(--text2); direction: ltr; text-align: right; }
+  .recipient-status {
+    margin-right: auto;
+    font-size: 10px;
+    background: rgba(232,0,28,0.15);
+    color: var(--red-bright);
+    padding: 2px 8px; border-radius: 10px;
+    font-weight: 700;
+  }
+
+  .cancel-btn {
+    width: 100%;
+    padding: 16px;
+    background: transparent;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text2);
+    font-size: 16px; font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .cancel-btn:hover { border-color: var(--text2); color: var(--text); }
+
+  .sent-overlay {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(8,10,13,0.96);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 10; padding: 30px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  .sent-overlay.visible { opacity: 1; pointer-events: all; }
+  .sent-check {
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,230,118,0.2), rgba(0,230,118,0.05));
+    border: 2px solid var(--green);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 50px; margin-bottom: 24px;
+    box-shadow: 0 0 40px rgba(0,230,118,0.3);
+    animation: check-pop 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+  }
+  @keyframes check-pop {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+  .sent-title { font-size: 26px; font-weight: 900; color: var(--green); margin-bottom: 8px; }
+  .sent-desc { font-size: 15px; color: var(--text2); text-align: center; line-height: 1.6; margin-bottom: 30px; }
+  .sent-back {
+    width: 100%; padding: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text); font-size: 16px; font-weight: 700;
+    font-family: var(--font); cursor: pointer;
+  }
+
+  .settings-content { padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
+  .screen-title { font-size: 24px; font-weight: 900; padding: 8px 20px 0; }
+
+  .settings-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+  .settings-section-header {
+    padding: 14px 16px 10px;
+    font-size: 12px; font-weight: 700;
+    color: var(--text3); text-transform: uppercase; letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .contact-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .contact-item:last-child { border-bottom: none; }
+  .contact-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--red-dark), var(--red));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; flex-shrink: 0;
+    color: #fff;
+  }
+  .contact-info { flex: 1; }
+  .contact-name { font-size: 15px; font-weight: 700; }
+  .contact-num { font-size: 12px; color: var(--text2); direction: ltr; }
+  .contact-delete {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: rgba(232,0,28,0.1);
+    border: 1px solid rgba(232,0,28,0.2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: var(--red);
+    transition: all 0.15s;
+  }
+  .contact-delete:hover { background: rgba(232,0,28,0.2); }
+
+  .add-contact-btn {
+    width: 100%;
+    padding: 13px 16px;
+    background: transparent;
+    border: none; border-top: 1px solid var(--border);
+    color: var(--red-bright); font-size: 14px; font-weight: 700;
+    font-family: var(--font); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background 0.15s;
+  }
+  .add-contact-btn:hover { background: var(--red-soft); }
+
+  .toggle-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .toggle-item:last-child { border-bottom: none; }
+  .toggle-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .toggle-icon.blue { background: rgba(0,120,255,0.15); }
+  .toggle-icon.yellow { background: rgba(255,215,0,0.15); }
+  .toggle-icon.orange { background: rgba(255,100,0,0.15); }
+  .toggle-text { flex: 1; }
+  .toggle-title { font-size: 15px; font-weight: 700; }
+  .toggle-desc { font-size: 11px; color: var(--text2); margin-top: 2px; font-weight: 500; }
+
+  .switch { position: relative; width: 50px; height: 28px; flex-shrink: 0; }
+  .switch input { display: none; }
+  .switch-track {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: var(--surface3);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.25s;
+    border: 1px solid var(--border);
+  }
+  .switch-track::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--text3);
+    transition: all 0.25s;
+  }
+  .switch input:checked + .switch-track {
+    background: var(--red);
+    border-color: var(--red-dark);
+    box-shadow: 0 0 12px rgba(232,0,28,0.4);
+  }
+  .switch input:checked + .switch-track::after {
+    left: calc(100% - 23px);
+    background: #fff;
+  }
+
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 24px 24px 0 0;
+    padding: 28px 24px 40px;
+    width: 100%; max-width: 430px;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+  .modal-title { font-size: 20px; font-weight: 900; margin-bottom: 20px; }
+  .input-group { margin-bottom: 14px; }
+  .input-label { font-size: 12px; font-weight: 700; color: var(--text3); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+  .input-field {
+    width: 100%; padding: 14px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text); font-size: 15px; font-family: var(--font);
+    outline: none; transition: border 0.2s;
+    direction: rtl;
+  }
+  .input-field:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(232,0,28,0.1); }
+  .modal-save {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--red), var(--red-dark));
+    border: none; border-radius: var(--radius);
+    color: #fff; font-size: 16px; font-weight: 900;
+    font-family: var(--font); cursor: pointer; margin-top: 6px;
+    box-shadow: 0 8px 24px rgba(232,0,28,0.3);
+    transition: all 0.2s;
+  }
+  .modal-save:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(232,0,28,0.4); }
+
+  .log-content { padding: 0 20px; display: flex; flex-direction: column; gap: 14px; }
+  .log-empty {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 60px 20px; color: var(--text3); text-align: center;
+  }
+  .log-empty .empty-icon { font-size: 50px; margin-bottom: 16px; opacity: 0.5; }
+  .log-empty p { font-size: 15px; font-weight: 600; }
+
+  .log-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: var(--shadow-card);
+    position: relative; overflow: hidden;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .log-item:hover { transform: translateX(-3px); border-color: var(--border-red); }
+  .log-item-icon {
+    width: 46px; height: 46px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .log-item-icon.sos { background: rgba(232,0,28,0.15); }
+  .log-item-icon.fall { background: rgba(255,170,0,0.15); }
+  .log-item-icon.manual { background: rgba(0,120,255,0.15); }
+  .log-item-info { flex: 1; }
+  .log-item-type { font-size: 15px; font-weight: 700; }
+  .log-item-time { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .log-item-badge {
+    font-size: 10px; font-weight: 700;
+    padding: 3px 10px; border-radius: 10px;
+  }
+  .log-item-badge.sent { background: var(--green-soft); color: var(--green); border: 1px solid rgba(0,230,118,0.2); }
+  .log-item-badge.cancelled { background: rgba(255,255,255,0.05); color: var(--text3); border: 1px solid var(--border); }
+  .log-item-stripe {
+    position: absolute; right: 0; top: 0; bottom: 0;
+    width: 3px; border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .log-item-stripe.red { background: var(--red); }
+  .log-item-stripe.yellow { background: var(--yellow); }
+  .log-item-stripe.blue { background: #0078ff; }
+
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(13,16,23,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex; padding: 8px 10px 20px;
+    z-index: 50;
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+    padding: 8px; cursor: pointer;
+    transition: all 0.2s; border-radius: var(--radius-sm);
+    border: none; background: transparent; color: var(--text3);
+    font-family: var(--font); position: relative;
+  }
+  .nav-item:hover { background: var(--surface); }
+  .nav-item.active { color: var(--red-bright); }
+  .nav-item .nav-icon { font-size: 22px; line-height: 1; }
+  .nav-item .nav-label { font-size: 10px; font-weight: 700; }
+  .nav-item.active .nav-icon { filter: drop-shadow(0 0 6px rgba(232,0,28,0.6)); }
+  .nav-indicator {
+    position: absolute;
+    top: 4px; width: 30px; height: 3px;
+    background: var(--red); border-radius: 2px;
+    opacity: 0; transition: opacity 0.2s;
+    box-shadow: 0 0 8px var(--red);
+  }
+  .nav-item.active .nav-indicator { opacity: 1; }
+
+  @keyframes pulse-green {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .screen.active > * { animation: fade-in 0.3s ease both; }
+
+  .app::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='rgba(255,255,255,0.015)'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="status-bar">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div class="status-dot"></div>
+      <span style="font-size:11px;color:var(--green);font-weight:700;">نشط</span>
+    </div>
+    <div class="time" id="clock">--:--</div>
+    <div class="status-icons">
+      <span style="font-size:14px;">📶</span>
+      <span style="font-size:14px;">🔋</span>
+    </div>
+  </div>
+
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">🆘</div>
+      <div class="logo-text"><span>نج</span>دة</div>
+    </div>
+    <div class="header-badge"><span>●</span> مُفعَّل</div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="home-content">
+      <div class="sos-container">
+        <div class="sos-rings">
+          <div class="sos-ring"></div>
+          <div class="sos-ring"></div>
+          <div class="sos-ring"></div>
+        </div>
+        <button class="sos-btn" onclick="triggerSOS()">
+          <div class="sos-label">SOS</div>
+          <div class="sos-sublabel">اضغط للطوارئ</div>
+        </button>
+        <div class="sos-hint">اضغط مطولاً في حالة الطوارئ</div>
+      </div>
+      <div class="status-card">
+        <div class="status-indicator">🛡️</div>
+        <div class="status-info">
+          <div class="status-title">النظام يعمل بشكل طبيعي</div>
+          <div class="status-desc">جميع الخدمات متاحة · GPS نشط · 3 أرقام محفوظة</div>
+        </div>
+        <div class="status-live">مباشر</div>
+      </div>
+      <div>
+        <div class="section-title">الإجراءات السريعة</div>
+        <div style="margin-top:10px;" class="quick-actions">
+          <button class="quick-btn" onclick="getLocation()">
+            <div class="icon loc">📍</div>
+            <span class="label">موقعي</span>
+          </button>
+          <button class="quick-btn" onclick="showScreen('settings')">
+            <div class="icon num">📞</div>
+            <span class="label">الأرقام</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMERGENCY -->
+  <div class="screen" id="screen-emergency">
+    <div class="emergency-screen" id="emergency-inner">
+      <div class="emergency-header">
+        <div class="emergency-icon">🚨</div>
+        <div>
+          <div class="emergency-title">تنبيه طارئ</div>
+          <div class="emergency-sub">جاري إرسال بلاغ الطوارئ</div>
+        </div>
+      </div>
+      <div class="countdown-wrap">
+        <svg class="countdown-svg" viewBox="0 0 200 200">
+          <circle class="countdown-track" cx="100" cy="100" r="90"/>
+          <circle class="countdown-progress" id="countdown-circle" cx="100" cy="100" r="90"/>
+        </svg>
+        <div class="countdown-inner">
+          <div class="countdown-num" id="countdown-num">10</div>
+          <div class="countdown-label">ثانية</div>
+        </div>
+      </div>
+      <div class="emergency-info-card">
+        <div class="info-row">
+          <div class="info-icon">📍</div>
+          <div>
+            <div class="info-label">الموقع الحالي</div>
+            <div class="info-value" id="gps-location">جاري تحديد الموقع...</div>
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="info-icon">⏱️</div>
+          <div>
+            <div class="info-label">وقت البلاغ</div>
+            <div class="info-value" id="emergency-time">--</div>
+          </div>
+        </div>
+      </div>
+      <div class="recipients-card">
+        <div class="recipients-title">سيتم إخطار الأرقام التالية</div>
+        <div class="recipient-list" id="recipient-list"></div>
+      </div>
+      <button class="cancel-btn" onclick="cancelSOS()">
+        <span>✕</span> إلغاء البلاغ
+      </button>
+      <div class="sent-overlay" id="sent-overlay">
+        <div class="sent-check">✓</div>
+        <div class="sent-title">تم الإرسال!</div>
+        <div class="sent-desc">تم إرسال بلاغ الطوارئ وموقعك بنجاح إلى جهات الاتصال المحددة</div>
+        <button class="sent-back" onclick="goHome()">العودة للرئيسية</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="screen-settings">
+    <div class="screen-title">الإعدادات</div>
+    <div class="settings-content" style="margin-top:16px;">
+      <div class="settings-section">
+        <div class="settings-section-header">أرقام الطوارئ</div>
+        <div id="contacts-list"></div>
+        <button class="add-contact-btn" onclick="openAddModal()">
+          <span style="font-size:18px;">+</span> إضافة رقم طوارئ
+        </button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-header">خيارات التشغيل</div>
+        <div class="toggle-item">
+          <div class="toggle-icon blue">📱</div>
+          <div class="toggle-text">
+            <div class="toggle-title">كشف السقوط التلقائي</div>
+            <div class="toggle-desc">يرسل تنبيهاً عند اكتشاف سقوط مفاجئ</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="fall-toggle" checked>
+            <div class="switch-track"></div>
+          </label>
+        </div>
+        <div class="toggle-item">
+          <div class="toggle-icon yellow">🔔</div>
+          <div class="toggle-text">
+            <div class="toggle-title">الصفارة الصوتية</div>
+            <div class="toggle-desc">صوت تحذيري عالٍ عند تفعيل SOS</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="siren-toggle" checked>
+            <div class="switch-track"></div>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="screen" id="screen-log">
+    <div class="screen-title">سجل الحوادث</div>
+    <div class="log-content" style="margin-top:16px;" id="log-list"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-home" onclick="showScreen('home')">
+      <div class="nav-indicator"></div>
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">الرئيسية</div>
+    </button>
+    <button class="nav-item" id="nav-emergency" onclick="showScreen('emergency')" style="display:none">
+      <div class="nav-indicator"></div>
+      <div class="nav-icon">🚨</div>
+      <div class="nav-label">طوارئ</div>
+    </button>
+    <button class="nav-item" id="nav-settings" onclick="showScreen('settings')">
+      <div class="nav-indicator"></div>
+      <div class="nav-icon">⚙️</div>
+      <div class="nav-label">الإعدادات</div>
+    </button>
+    <button class="nav-item" id="nav-log" onclick="showScreen('log')">
+      <div class="nav-indicator"></div>
+      <div class="nav-icon">📋</div>
+      <div class="nav-label">السجل</div>
+    </button>
+  </nav>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">إضافة رقم طوارئ</div>
+    <div class="input-group">
+      <label class="input-label">اسم جهة الاتصال</label>
+      <input class="input-field" id="new-name" type="text" placeholder="مثال: والدي، أخي..." />
+    </div>
+    <div class="input-group">
+      <label class="input-label">رقم الهاتف</label>
+      <input class="input-field" id="new-phone" type="tel" placeholder="+966 5X XXX XXXX" style="direction:ltr;text-align:right;" />
+    </div>
+    <button class="modal-save" onclick="saveContact()">💾 حفظ الرقم</button>
+  </div>
+</div>
+
+<script>
+let state = {
+  contacts: [
+    { id: 1, name: 'والدي', phone: '+966501234567', emoji: '👨' },
+    { id: 2, name: 'أخي محمد', phone: '+966509876543', emoji: '👦' },
+    { id: 3, name: 'أمي', phone: '+966505551234', emoji: '👩' },
+  ],
+  log: [
+    { id: 1, type: 'sos', label: 'تنبيه SOS يدوي', time: '2025-04-17T14:32:00', status: 'sent' },
+    { id: 2, type: 'fall', label: 'كشف سقوط تلقائي', time: '2025-04-15T09:15:00', status: 'sent' },
+    { id: 3, type: 'manual', label: 'اختبار النظام', time: '2025-04-13T18:45:00', status: 'cancelled' },
+  ],
+  settings: { fall: true, siren: true },
+  countdown: null,
+};
+
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  const navEl = document.getElementById('nav-' + name);
+  if (navEl) navEl.classList.add('active');
+}
+
+function triggerSOS() {
+  const now = new Date();
+  const entry = { id: Date.now(), type: 'sos', label: 'تنبيه SOS يدوي', time: now.toISOString(), status: 'pending' };
+  state.log.unshift(entry);
+  document.getElementById('nav-emergency').style.display = 'flex';
+  showScreen('emergency');
+  document.getElementById('emergency-time').textContent = formatTime(now);
+  
+  // طلب وتحديد الموقع الدقيق
+  document.getElementById('gps-location').textContent = 'جاري تحديد الموقع...';
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude.toFixed(4);
+        const lng = position.coords.longitude.toFixed(4);
+        document.getElementById('gps-location').textContent = `${lat}° N, ${lng}° E`;
+      },
+      (error) => {
+        document.getElementById('gps-location').textContent = 'تعذر تحديد الموقع';
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  } else {
+    document.getElementById('gps-location').textContent = 'الموقع غير مدعوم';
+  }
+
+  const list = document.getElementById('recipient-list');
+  list.innerHTML = state.contacts.map(c => `
+    <div class="recipient-item">
+      <div class="recipient-avatar">${c.emoji}</div>
+      <div><div class="recipient-name">${c.name}</div><div class="recipient-num">${c.phone}</div></div>
+      <div class="recipient-status">جاري الإرسال</div>
+    </div>`).join('');
+  document.getElementById('sent-overlay').classList.remove('visible');
+  startCountdown(entry);
+}
+
+function startCountdown(logEntry) {
+  let count = 10;
+  const numEl = document.getElementById('countdown-num');
+  const circle = document.getElementById('countdown-circle');
+  const circumference = 565;
+  numEl.textContent = count;
+  circle.style.strokeDashoffset = 0;
+  circle.style.stroke = 'var(--red)';
+  if (state.countdown) clearInterval(state.countdown);
+  state.countdown = setInterval(() => {
+    count--;
+    numEl.textContent = count;
+    circle.style.strokeDashoffset = circumference * (1 - count / 10);
+    if (count <= 3) { circle.style.stroke = '#ff6600'; numEl.style.color = '#ff6600'; }
+    if (count <= 0) {
+      clearInterval(state.countdown);
+      state.countdown = null;
+      numEl.style.color = '';
+      circle.style.stroke = 'var(--green)';
+      numEl.textContent = '✓';
+      logEntry.status = 'sent';
+      document.querySelectorAll('.recipient-status').forEach(el => {
+        el.textContent = 'تم الإرسال ✓';
+        el.style.background = 'rgba(0,230,118,0.15)';
+        el.style.color = 'var(--green)';
+      });
+      setTimeout(() => { document.getElementById('sent-overlay').classList.add('visible'); }, 600);
+    }
+  }, 1000);
+}
+
+function cancelSOS() {
+  if (state.countdown) { clearInterval(state.countdown); state.countdown = null; }
+  if (state.log[0] && state.log[0].status === 'pending') state.log[0].status = 'cancelled';
+  goHome();
+}
+
+function goHome() {
+  document.getElementById('nav-emergency').style.display = 'none';
+  showScreen('home');
+  renderLog();
+}
+
+// طلب إذن الموقع وجلب الموقع الدقيق
+function getLocation() {
+  const btn = event.target.closest('.quick-btn') || document.querySelector('.icon.loc').parentElement;
+  btn.style.borderColor = 'rgba(0,120,255,0.5)';
+  
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        btn.style.borderColor = '';
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        alert(`📍 موقعك الحالي الدقيق:\n${lat}° شمالاً, ${lng}° شرقاً`);
+      },
+      (error) => {
+        btn.style.borderColor = '';
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            alert("تم رفض إذن الوصول للموقع. يرجى تفعيل إذن الموقع من إعدادات المتصفح/الجهاز.");
+            break;
+          case error.POSITION_UNAVAILABLE:
+            alert("معلومات الموقع غير متوفرة.");
+            break;
+          case error.TIMEOUT:
+            alert("انتهى وقت طلب الحصول على الموقع.");
+            break;
+          default:
+            alert("حدث خطأ غير معروف أثناء محاولة تحديد الموقع.");
+            break;
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  } else {
+    btn.style.borderColor = '';
+    alert("متصفحك لا يدعم ميزة تحديد الموقع.");
+  }
+}
+
+function renderContacts() {
+  const list = document.getElementById('contacts-list');
+  if (!state.contacts.length) { list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:14px;">لا توجد أرقام محفوظة</div>'; return; }
+  list.innerHTML = state.contacts.map(c => `
+    <div class="contact-item">
+      <div class="contact-avatar">${c.emoji}</div>
+      <div class="contact-info"><div class="contact-name">${c.name}</div><div class="contact-num">${c.phone}</div></div>
+      <button class="contact-delete" onclick="deleteContact(${c.id})">🗑️</button>
+    </div>`).join('');
+}
+
+function deleteContact(id) {
+  state.contacts = state.contacts.filter(c => c.id !== id);
+  renderContacts();
+}
+
+const emojis = ['👤','👨','👩','👦','👧','🧑','🧓','👴','👵','🙂'];
+
+function openAddModal() {
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-phone').value = '';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal-overlay')) document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function saveContact() {
+  const name = document.getElementById('new-name').value.trim();
+  const phone = document.getElementById('new-phone').value.trim();
+  if (!name || !phone) { alert('يرجى ملء جميع الحقول'); return; }
+  state.contacts.push({ id: Date.now(), name, phone, emoji: emojis[Math.floor(Math.random() * emojis.length)] });
+  renderContacts();
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function renderLog() {
+  const container = document.getElementById('log-list');
+  if (!state.log.length) { container.innerHTML = '<div class="log-empty"><div class="empty-icon">📋</div><p>لا توجد حوادث مسجلة</p></div>'; return; }
+  const icons = { sos: { icon: '🚨', cls: 'sos', color: 'red' }, fall: { icon: '⚠️', cls: 'fall', color: 'yellow' }, manual: { icon: '🔵', cls: 'manual', color: 'blue' } };
+  container.innerHTML = state.log.map(item => {
+    const ic = icons[item.type] || icons.sos;
+    const date = new Date(item.time);
+    return `<div class="log-item">
+      <div class="log-item-stripe ${ic.color}"></div>
+      <div class="log-item-icon ${ic.cls}">${ic.icon}</div>
+      <div class="log-item-info"><div class="log-item-type">${item.label}</div><div class="log-item-time">${formatDate(date)} · ${formatTime(date)}</div></div>
+      <div class="log-item-badge ${item.status === 'sent' ? 'sent' : 'cancelled'}">${item.status === 'sent' ? 'تم الإرسال' : 'ملغي'}</div>
+    </div>`;
+  }).join('');
+}
+
+function formatTime(d) { return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function formatDate(d) {
+  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  return `${d.getDate()} ${months[d.getMonth()]}`;
+}
+
+renderContacts();
+renderLog();
+</script>
+</body>
+</html>
